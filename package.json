@@ -1,0 +1,25 @@
+{
+	"name": "trureadina",
+	"version": "4.0.0",
+	"author": "selectdev",
+	"license": "MIT",
+	"scripts": {
+		"start": "node ./dist/index",
+		"tsc": "tsc",
+		"format": "prettier --write .",
+		"test": "jest",
+		"database:typegen": "npx @kalissaac/prisma-typegen ./src/v4-database/types/prismaTypes.ts ./src/v4-database/schema.prisma"
+	},
+	"type": "module",
+	"dependencies": {
+		"@prisma/client": "^5.8.1",
+		"colors": "^1.4.0",
+		"dotenv": "^16.3.1",
+		"fs": "^0.0.1-security",
+		"prettier": "^3.2.4",
+		"prisma": "^5.8.1"
+	},
+	"devDependencies": {
+		"@types/node": "^20.11.5"
+	}
+}

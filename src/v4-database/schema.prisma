@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model botaudits {
+  id    Int         @id @unique @default(autoincrement())
+  botid String      @db.VarChar(255)
+  bot   discordbots @relation(fields: [botid], references: [botid])
+
+  staffid String    @db.VarChar(255)
+  action  botaction
+  reason  String    @db.VarChar(255)
+}
+
+model botcomments {
+  commentid String @id @unique @db.VarChar(255)
+
+  creatorid String @db.VarChar(255)
+  user      users  @relation(fields: [creatorid], references: [userid])
+
+  bot   discordbots @relation(fields: [botid], references: [botid])
+  botid String      @db.VarChar(255)
+
+  caption String  @db.VarChar(255)
+  image   String? @db.VarChar(255)
+}
+
+model discordbots {
+  botid           String    @id @unique @db.VarChar(255)
+  name            String    @db.VarChar(255)
+  description     String
+  longdescription String
+  status          botstatus
+
+  state     botstate
+  auditlogs botaudits[]
+
+  upvotes   String[]
+  downvotes String[]
+  comments  botcomments[]
+
+  ownerid String
+  owner   users  @relation(fields: [ownerid], references: [userid])
+}
+
+model users {
+  username    String? @db.VarChar(255)
+  userid  String  @id @unique @db.VarChar(255)
+
+  bio       String   @default("i exist now. yes.") @db.VarChar(255)
+  avatar    String   @default("/logo.png") @db.VarChar(255)
+  badges    String[]
+  staff_perms String[] @default([])
+
+  discordbots discordbots[]
+  botcomments botcomments[]
+}
+
+enum botstatus {
+  ONLINE
+  IDLE
+  DND
+  OFFLINE
+}
+
+enum botstate {
+  APPROVED
+  DENIED
+  PENDING
+  BANNED
+}
+
+enum botaction {
+  APPROVE
+  DENY
+  BAN
+  VOTE_BAN
+  OTHER
+}

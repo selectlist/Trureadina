@@ -1,3 +1,0 @@
-[submodule "src/v4-database"]
-	path = src/v4-database
-	url = https://github.com/selectlist/v4-database

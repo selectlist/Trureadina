@@ -6,13 +6,13 @@ import * as database from "../v4-database/prisma.js";
 export default {
 	data: {
 		meta: new SlashCommandBuilder()
-			.setName("list_bots")
-			.setDescription("List all Bots."),
+			.setName("queue")
+			.setDescription("View Queue"),
 		permissionRequired: null,
 	},
 	async execute(client, interaction) {
 		const bots = await database.Bots.find({
-			state: "APPROVED",
+			state: "PENDING",
 		});
 
 		const pages = bots.map((p) => {

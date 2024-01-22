@@ -1,228 +1,104 @@
 import {
-	ButtonStyle,
 	ActionRowBuilder,
-	ButtonBuilder,
-	AttachmentBuilder,
 	EmbedBuilder,
-	UserResolvable,
+	ButtonBuilder,
+	ButtonStyle,
+	APIButtonComponentWithCustomId,
 } from "discord.js";
-import * as logger from "./logger.js";
 
-const availableEmojis = ["⏮️", "◀️", "⏹️", "▶️", "⏭️"];
+const paginationEmbed = async (
+	interaction,
+	pages: EmbedBuilder[],
+	buttonList: ButtonBuilder[],
+	timeout: number = 120000
+) => {
+	if (!pages) throw new Error("Pages are not given.");
+	if (!buttonList) throw new Error("Buttons are not given.");
+	if (
+		buttonList[0].toJSON().style === ButtonStyle.Link ||
+		buttonList[1].toJSON().style === ButtonStyle.Link
+	)
+		throw new Error(
+			"Link buttons are not supported with discordjs-button-pagination"
+		);
+	if (buttonList.length !== 2) throw new Error("Need two buttons.");
 
-class Pagination {
-	interaction: any;
-	pages: EmbedBuilder[];
-	footerText: String;
-	buttons: ButtonBuilder[];
-	defaultbuttons: ButtonBuilder[];
-	timeout: Number;
-	author: UserResolvable;
-	files: AttachmentBuilder[];
-	index: number;
+	let page = 0;
 
-	constructor(
-		interaction: any,
-		pages: EmbedBuilder[],
-		footerText: String = "Page",
-		buttons: ButtonBuilder[],
-		timeout: Number,
-		author: UserResolvable,
-		files: AttachmentBuilder[],
-		index: number = 0
-	) {
-		this.interaction = interaction;
-		this.footerText = footerText;
-		this.buttons = buttons;
-		this.timeout = timeout;
-		this.author = author;
-		this.files = files;
-		this.index = index;
+	const row = new ActionRowBuilder().addComponents(buttonList);
 
-		this.defaultbuttons = [
-			new ButtonBuilder({
-				emoji: "⏮️",
-				style: ButtonStyle.Primary,
-				type: 2,
-				customId: "⏮️",
+	if (interaction.deferred == false) await interaction.deferReply();
+
+	const curPage = await interaction.editReply({
+		embeds: [
+			pages[page].setFooter({
+				text: `Page ${page + 1} / ${pages.length}`,
 			}),
-			new ButtonBuilder({
-				emoji: "◀️",
-				style: ButtonStyle.Primary,
-				type: 2,
-				customId: "◀️",
-			}),
-			new ButtonBuilder({
-				style: ButtonStyle.Danger,
-				emoji: "⏹️",
-				type: 2,
-				customId: "⏹️",
-			}),
-			new ButtonBuilder({
-				emoji: "▶️",
-				style: ButtonStyle.Primary,
-				type: 2,
-				customId: "▶️",
-			}),
-			new ButtonBuilder({
-				emoji: "⏭️",
-				style: ButtonStyle.Primary,
-				type: 2,
-				customId: "⏭️",
-			}),
-		];
+		],
+		components: [row],
+		fetchReply: true,
+	});
 
-		if (buttons && buttons.length > 5)
-			throw new TypeError(
-				"You have passed more than 5 buttons as buttons"
-			);
+	const filter = (i) =>
+		i.customId ===
+			(buttonList[0].toJSON() as Partial<APIButtonComponentWithCustomId>)
+				.custom_id ||
+		i.customId ===
+			(buttonList[1].toJSON() as Partial<APIButtonComponentWithCustomId>)
+				.custom_id;
 
-		if (files) this.files = files;
+	const collector = await curPage.createMessageComponentCollector({
+		filter,
+		time: timeout,
+	});
 
-		this.pages = pages.map((page, pageIndex) => {
-			if (
-				page.data.footer &&
-				(page.data.footer.text || page.data.footer.icon_url)
-			)
-				return page;
+	collector.on("collect", async (i) => {
+		switch (i.customId) {
+			case (
+				buttonList[0].toJSON() as Partial<APIButtonComponentWithCustomId>
+			).custom_id:
+				page = page > 0 ? --page : pages.length - 1;
+				break;
+			case (
+				buttonList[1].toJSON() as Partial<APIButtonComponentWithCustomId>
+			).custom_id:
+				page = page + 1 < pages.length ? ++page : 0;
+				break;
+			default:
+				break;
+		}
 
-			return page.setFooter({
-				text: `Executed by ${interaction.user.tag} | ${footerText} ${
-					pageIndex + 1
-				}/${pages.length}`,
-				iconURL: this.interaction.user.displayAvatarURL(),
-			});
+		await i.deferUpdate();
+		await i.editReply({
+			embeds: [
+				pages[page].setFooter({
+					text: `Page ${page + 1} / ${pages.length}`,
+				}),
+			],
+			components: [row],
 		});
-	}
 
-	/**
-	 * Starts the pagination
-	 */
-	async paginate() {
-		let collect = null;
-		const extraButtons = this.buttons;
+		collector.resetTimer();
+	});
 
-		if (!extraButtons)
-			this.interaction = await this.interaction?.reply({
-				embeds: [this.pages[this.index]],
-				...(this.files && { files: [this.files[this.index]] }),
-				components: [
-					new ActionRowBuilder({
-						components: [...this.buttons],
+	collector.on("end", (_, reason) => {
+		if (reason !== "messageDelete") {
+			const disabledRow = new ActionRowBuilder().addComponents(
+				buttonList[0].setDisabled(true),
+				buttonList[1].setDisabled(true)
+			);
+			curPage.edit({
+				embeds: [
+					pages[page].setFooter({
+						text: `Page ${page + 1} / ${pages.length}`,
 					}),
 				],
+				components: [disabledRow],
 			});
-		else
-			this.interaction = await this.interaction?.reply({
-				embeds: [this.pages[this.index]],
-				...(this.files && { files: [this.files[this.index]] }),
-				components: [
-					new ActionRowBuilder({
-						components: this.buttons,
-					}),
-					new ActionRowBuilder({
-						components: extraButtons,
-					}),
-				],
-			});
+		}
+	});
 
-		if (this.pages.length < 2) return;
+	return curPage;
+};
 
-		const author = this.author ? this.interaction.user : undefined;
-
-		const interactionCollector =
-			(collect = this.interaction) === null || collect === void 0
-				? void 0
-				: collect.createMessageComponentCollector({
-						max: this.pages.length * 5,
-						filter: (x) => {
-							return !(author && x.user.id !== author.id);
-						},
-					});
-
-		interactionCollector === null || interactionCollector === void 0
-			? void 0
-			: interactionCollector.on("collect", async (i) => {
-					const { customId } = i;
-					let newIndex =
-						customId === availableEmojis[0]
-							? 0 // Start
-							: customId === availableEmojis[1]
-								? this.index - 1 // Prev
-								: customId === availableEmojis[2]
-									? NaN // Stop
-									: customId === availableEmojis[3]
-										? this.index + 1 // Next
-										: customId === availableEmojis[4]
-											? this.pages.length - 1 // End
-											: this.index;
-
-					if (isNaN(newIndex)) {
-						// Stop
-						interactionCollector.stop("stopped by user");
-
-						await i.update({
-							content:
-								"The interaction has expired due to Stop button being clicked by user.",
-							embeds: [],
-							components: [],
-						});
-					} else {
-						if (newIndex < 0) newIndex = 0;
-						if (newIndex >= this.pages.length)
-							newIndex = this.pages.length - 1;
-
-						this.index = newIndex;
-
-						const buttons = this.buttons || this.defaultbuttons;
-
-						if (
-							this.buttons === undefined ||
-							this.buttons === null ||
-							this.buttons.length === 0
-						) {
-							await i.update({
-								embeds: [this.pages[this.index]],
-								...(this.files && {
-									files: [this.files[this.index]],
-								}),
-								components: [
-									new ActionRowBuilder({
-										components: buttons,
-									}),
-								],
-							});
-						} else {
-							await i.update({
-								embeds: [this.pages[this.index]],
-								...(this.files && {
-									files: [this.files[this.index]],
-								}),
-								components: [
-									new ActionRowBuilder({
-										components: this.defaultbuttons,
-									}),
-									new ActionRowBuilder({
-										components: this.buttons,
-									}),
-								],
-							});
-						}
-					}
-				});
-
-		interactionCollector === null || interactionCollector === void 0
-			? void 0
-			: interactionCollector.on("end", async (msg) => {
-					let collect = null;
-					await ((collect =
-						this === null || this === void 0
-							? void 0
-							: this.interaction) === null || collect === void 0
-						? void 0
-						: logger.info("Pagination (Interaction)", "Closed!"));
-				});
-	}
-}
-
-export default Pagination;
+export default paginationEmbed;

@@ -41,5 +41,5 @@ export default {
 			],
 		});
 	},
-    async autocomplete(client, interaction) {}
+	async autocomplete(client, interaction) {},
 };

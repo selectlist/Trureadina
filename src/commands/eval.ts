@@ -50,5 +50,5 @@ export default {
 
 		await interaction.showModal(modal);
 	},
-    async autocomplete(client, interaction) {}
+	async autocomplete(client, interaction) {},
 };

@@ -19,6 +19,11 @@ export default {
 			return new EmbedBuilder()
 				.setTitle(p.name)
 				.setDescription(p.description)
+				.setThumbnail(
+					p.avatar === "/logo.png"
+						? "https://sparkyflight.xyz/logo.png"
+						: p.avatar
+				)
 				.setColor("Random")
 				.setAuthor({
 					name: p.owner.username,
@@ -36,5 +41,5 @@ export default {
 			});
 		else return await Pagination(interaction, pages, []);
 	},
-    async autocomplete(client, interaction) {}
+	async autocomplete(client, interaction) {},
 };

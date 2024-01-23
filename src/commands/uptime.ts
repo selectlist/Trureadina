@@ -27,4 +27,5 @@ export default {
 			content: formatTime(process.uptime()),
 		});
 	},
+	async autocomplete(client, interaction) {},
 };

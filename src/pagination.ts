@@ -9,23 +9,38 @@ import {
 const paginationEmbed = async (
 	interaction,
 	pages: EmbedBuilder[],
-	buttonList: ButtonBuilder[],
+	buttons: {
+		button: ButtonBuilder;
+		execute: (page: EmbedBuilder, collector: any) => Promise<void>;
+	}[],
 	timeout: number = 120000
 ) => {
 	if (!pages) throw new Error("Pages are not given.");
-	if (!buttonList) throw new Error("Buttons are not given.");
-	if (
-		buttonList[0].toJSON().style === ButtonStyle.Link ||
-		buttonList[1].toJSON().style === ButtonStyle.Link
-	)
-		throw new Error(
-			"Link buttons are not supported with discordjs-button-pagination"
-		);
-	if (buttonList.length !== 2) throw new Error("Need two buttons.");
 
 	let page = 0;
 
-	const row = new ActionRowBuilder().addComponents(buttonList);
+	const defaultButtons: ButtonBuilder[] = [
+		new ButtonBuilder()
+			.setStyle(ButtonStyle.Primary)
+			.setCustomId("previous")
+			.setLabel("Previous"),
+		new ButtonBuilder()
+			.setStyle(ButtonStyle.Danger)
+			.setCustomId("stop")
+			.setLabel("Stop"),
+		new ButtonBuilder()
+			.setStyle(ButtonStyle.Success)
+			.setCustomId("next")
+			.setLabel("Next"),
+	];
+
+	const row = new ActionRowBuilder().addComponents(defaultButtons);
+	const extraRow = new ActionRowBuilder().addComponents(
+		buttons.map((p) => p.button)
+	);
+
+	let components = [row];
+	if (buttons.length > 0) components.push(extraRow);
 
 	if (interaction.deferred == false) await interaction.deferReply();
 
@@ -35,17 +50,28 @@ const paginationEmbed = async (
 				text: `Page ${page + 1} / ${pages.length}`,
 			}),
 		],
-		components: [row],
+		components: components,
 		fetchReply: true,
 	});
 
-	const filter = (i) =>
-		i.customId ===
-			(buttonList[0].toJSON() as Partial<APIButtonComponentWithCustomId>)
-				.custom_id ||
-		i.customId ===
-			(buttonList[1].toJSON() as Partial<APIButtonComponentWithCustomId>)
-				.custom_id;
+	const filter = (i) => {
+		if (
+			buttons.find(
+				(p) =>
+					(
+						p.button.toJSON() as Partial<APIButtonComponentWithCustomId>
+					).custom_id === i.customId
+			)
+		)
+			return true;
+		else if (
+			i.customId === "previous" ||
+			i.customId === "stop" ||
+			i.customId === "next"
+		)
+			return true;
+		else return false;
+	};
 
 	const collector = await curPage.createMessageComponentCollector({
 		filter,
@@ -53,30 +79,38 @@ const paginationEmbed = async (
 	});
 
 	collector.on("collect", async (i) => {
-		switch (i.customId) {
-			case (
-				buttonList[0].toJSON() as Partial<APIButtonComponentWithCustomId>
-			).custom_id:
-				page = page > 0 ? --page : pages.length - 1;
-				break;
-			case (
-				buttonList[1].toJSON() as Partial<APIButtonComponentWithCustomId>
-			).custom_id:
-				page = page + 1 < pages.length ? ++page : 0;
-				break;
-			default:
-				break;
-		}
+		const button = buttons.find(
+			(p) =>
+				(p.button.toJSON() as Partial<APIButtonComponentWithCustomId>)
+					.custom_id === i.customId
+		);
 
-		await i.deferUpdate();
-		await i.editReply({
-			embeds: [
-				pages[page].setFooter({
-					text: `Page ${page + 1} / ${pages.length}`,
-				}),
-			],
-			components: [row],
-		});
+		if (button) await button.execute(pages[page], i);
+		else {
+			switch (i.customId) {
+				case "previous":
+					page = page > 0 ? --page : pages.length - 1;
+					break;
+				case "stop":
+					collector.stop();
+					break;
+				case "next":
+					page = page + 1 < pages.length ? ++page : 0;
+					break;
+				default:
+					break;
+			}
+
+			await i.deferUpdate();
+			await i.editReply({
+				embeds: [
+					pages[page].setFooter({
+						text: `Page ${page + 1} / ${pages.length}`,
+					}),
+				],
+				components: components,
+			});
+		}
 
 		collector.resetTimer();
 	});
@@ -84,8 +118,9 @@ const paginationEmbed = async (
 	collector.on("end", (_, reason) => {
 		if (reason !== "messageDelete") {
 			const disabledRow = new ActionRowBuilder().addComponents(
-				buttonList[0].setDisabled(true),
-				buttonList[1].setDisabled(true)
+				defaultButtons[0].setDisabled(true),
+				defaultButtons[1].setDisabled(true),
+				defaultButtons[2].setDisabled(true)
 			);
 			curPage.edit({
 				embeds: [

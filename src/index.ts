@@ -13,6 +13,7 @@ import {
 	EmbedBuilder,
 	codeBlock,
 	ModalSubmitInteraction,
+	AutocompleteInteraction,
 } from "discord.js";
 import { debug, info, error } from "./logger.js";
 import "dotenv/config";
@@ -58,6 +59,10 @@ const commands: Map<
 		execute: (
 			client: Client,
 			interaction: ChatInputCommandInteraction
+		) => Promise<void>;
+		autocomplete: (
+			client: Client,
+			interaction: AutocompleteInteraction
 		) => Promise<void>;
 	}
 > = new Map();
@@ -244,6 +249,34 @@ client.on(Events.InteractionCreate, async (interaction) => {
 						}),
 				],
 			});
+		}
+	}
+
+	// Autocomplete
+	if (interaction.isAutocomplete()) {
+		const command = commands.get(interaction.commandName);
+		if (!command) return;
+
+		try {
+			if (command.data.permissionRequired) {
+				const user = await database.Users.get({
+					userid: interaction.user.id,
+				});
+
+				if (user) {
+					if (
+						hasPerm(
+							user.staff_perms,
+							command.data.permissionRequired
+						)
+					)
+						await command?.autocomplete(client, interaction);
+					else return;
+				} else return;
+			} else await command?.autocomplete(client, interaction);
+		} catch (p) {
+			error("Discord", p.toString());
+			return;
 		}
 	}
 });

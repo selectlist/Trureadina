@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { ButtonBuilder, ButtonStyle, EmbedBuilder } from "discord.js";
+import { EmbedBuilder } from "discord.js";
 import Pagination from "../pagination.js";
 import * as database from "../v4-database/prisma.js";
 
@@ -17,9 +17,9 @@ export default {
 
 		const pages = bots.map((p) => {
 			return new EmbedBuilder()
-				.setTitle(`${p.name} [${p.botid}]`)
+				.setTitle(p.name)
 				.setDescription(p.description)
-                .setColor("Random")
+				.setColor("Random")
 				.setAuthor({
 					name: p.owner.username,
 					iconURL:
@@ -34,16 +34,7 @@ export default {
 			return await interaction.reply({
 				content: "Sorry, there are no bots to show.",
 			});
-		else
-			return await Pagination(interaction, pages, [
-				new ButtonBuilder()
-					.setStyle(ButtonStyle.Secondary)
-					.setCustomId("prev")
-					.setLabel("Previous"),
-				new ButtonBuilder()
-					.setStyle(ButtonStyle.Primary)
-					.setCustomId("next")
-					.setLabel("Next"),
-			]);
+		else return await Pagination(interaction, pages, []);
 	},
+    async autocomplete(client, interaction) {}
 };

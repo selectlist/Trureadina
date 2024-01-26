@@ -252,33 +252,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
 		}
 	}
 
-	/* Autocomplete
+	// Autocomplete
 	if (interaction.isAutocomplete()) {
 		const command = commands.get(interaction.commandName);
 		if (!command) return;
 
 		try {
-			if (command.data.permissionRequired) {
-				const user = await database.Users.get({
-					userid: interaction.user.id,
-				});
-
-				if (user) {
-					if (
-						hasPerm(
-							user.staff_perms,
-							command.data.permissionRequired
-						)
-					)
-						await command?.autocomplete(client, interaction);
-					else return;
-				} else return;
-			} else await command?.autocomplete(client, interaction);
+			await command?.autocomplete(client, interaction);
 		} catch (p) {
 			error("Discord", p.toString());
 			return;
 		}
-	}*/
+	}
 });
 
 // Login to Discord

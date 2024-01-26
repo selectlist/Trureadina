@@ -14,12 +14,9 @@ import {
 	codeBlock,
 	ModalSubmitInteraction,
 	AutocompleteInteraction,
-	GuildMember,
-	Presence,
 } from "discord.js";
 import { debug, info, error } from "./logger.js";
 import "dotenv/config";
-import { botstatus } from "@prisma/client";
 
 // Config
 let DISCORD_SERVER_URI: String = "https://discord.gg/XdGs8WFFtK";
@@ -261,184 +258,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 		if (!command) return;
 
 		try {
-			if (command.data.permissionRequired) {
-				const user = await database.Users.get({
-					userid: interaction.user.id,
-				});
-
-				if (user) {
-					if (
-						hasPerm(
-							user.staff_perms,
-							command.data.permissionRequired
-						)
-					)
-						await command?.autocomplete(client, interaction);
-					else return;
-				} else return;
-			} else await command?.autocomplete(client, interaction);
+			await command?.autocomplete(client, interaction);
 		} catch (p) {
 			error("Discord", p.toString());
 			return;
 		}
 	}
 });
-
-client.on("guildMemberAdd", async (member: GuildMember) => {
-	if (member.user.bot) {
-		let presence: botstatus;
-
-		switch (member.presence.status) {
-			case "online":
-				presence = "ONLINE";
-				break;
-			case "idle":
-				presence = "IDLE";
-				break;
-			case "dnd":
-				presence = "DND";
-				break;
-			case "invisible":
-				presence = "OFFLINE";
-				break;
-			default:
-				presence = "OFFLINE";
-				break;
-		}
-
-		let bot = await database.Prisma.discordbots.findUnique({
-			where: {
-				botid: member.user.id,
-			},
-		});
-
-		if (bot) {
-			bot.name = member.user.username;
-			bot.avatar = member.user.displayAvatarURL();
-			bot.status = presence;
-
-			await database.Bots.update(member.user.id, bot);
-		}
-	} else {
-		let user = await database.Prisma.users.findUnique({
-			where: {
-				userid: member.user.id,
-			},
-		});
-
-		if (user) {
-			user.username = member.user.username;
-			user.avatar = member.user.displayAvatarURL();
-
-			await database.Users.update(member.user.id, user);
-		}
-	}
-});
-
-client.on("guildMemberUpdate", async (member: GuildMember) => {
-	if (member.user.bot) {
-		let presence: botstatus;
-
-		switch (member.presence.status) {
-			case "online":
-				presence = "ONLINE";
-				break;
-			case "idle":
-				presence = "IDLE";
-				break;
-			case "dnd":
-				presence = "DND";
-				break;
-			case "invisible":
-				presence = "OFFLINE";
-				break;
-			default:
-				presence = "OFFLINE";
-				break;
-		}
-
-		let bot = await database.Prisma.discordbots.findUnique({
-			where: {
-				botid: member.user.id,
-			},
-		});
-
-		if (bot) {
-			bot.name = member.user.username;
-			bot.avatar = member.user.displayAvatarURL();
-			bot.status = presence;
-
-			await database.Bots.update(member.user.id, bot);
-		}
-	} else {
-		let user = await database.Prisma.users.findUnique({
-			where: {
-				userid: member.user.id,
-			},
-		});
-
-		if (user) {
-			user.username = member.user.username;
-			user.avatar = member.user.displayAvatarURL();
-
-			await database.Users.update(member.user.id, user);
-		}
-	}
-});
-
-client.on(
-	"presenceUpdate",
-	async (oldPresence: Presence, newPresence: Presence) => {
-		if (oldPresence.user.bot) {
-			let presence: botstatus;
-
-			switch (newPresence.member.presence.status) {
-				case "online":
-					presence = "ONLINE";
-					break;
-				case "idle":
-					presence = "IDLE";
-					break;
-				case "dnd":
-					presence = "DND";
-					break;
-				case "invisible":
-					presence = "OFFLINE";
-					break;
-				default:
-					presence = "OFFLINE";
-					break;
-			}
-
-			let bot = await database.Prisma.discordbots.findUnique({
-				where: {
-					botid: oldPresence.user.id,
-				},
-			});
-
-			if (bot) {
-				bot.name = oldPresence.user.username;
-				bot.avatar = oldPresence.user.displayAvatarURL();
-				bot.status = presence;
-
-				await database.Bots.update(oldPresence.user.id, bot);
-			}
-		} else {
-			let user = await database.Prisma.users.findUnique({
-				where: {
-					userid: oldPresence.user.id,
-				},
-			});
-
-			if (user) {
-				user.username = oldPresence.user.username;
-				user.avatar = oldPresence.user.displayAvatarURL();
-
-				await database.Users.update(oldPresence.user.id, user);
-			}
-		}
-	}
-);
 
 // Login to Discord
 client.login(process.env.DISCORD_TOKEN);

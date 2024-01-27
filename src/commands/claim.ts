@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import * as database from "../v4-database/prisma.js";
-import { Claim } from "../v4-database/staff_actions.js";
+import { Discord } from "../v4-database/staff_actions.js";
 
 export default {
 	data: {
@@ -18,12 +18,12 @@ export default {
 	},
 	async execute(client, interaction) {
 		const bot = interaction.options.getString("bot");
-		const data = await database.Bots.get({
+		const data = await database.Discord.get({
 			botid: bot,
 		});
 
 		if (data) {
-			let action = await Claim(bot, interaction.user.id);
+			let action = await Discord.Claim(bot, interaction.user.id);
 
 			if (action === true)
 				await interaction.reply({
@@ -39,7 +39,7 @@ export default {
 			value: string;
 		}[] = [];
 
-		const bots = await database.Bots.find({
+		const bots = await database.Discord.find({
 			state: "PENDING",
 		});
 		bots.map((o) =>

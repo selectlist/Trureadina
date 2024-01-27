@@ -7,11 +7,11 @@ export default {
 	data: {
 		meta: new SlashCommandBuilder()
 			.setName("queue")
-			.setDescription("View Queue"),
+			.setDescription("View Discord Queue"),
 		permissionRequired: null,
 	},
 	async execute(client, interaction) {
-		const bots = await database.Bots.find({
+		const bots = await database.Discord.find({
 			state: "PENDING",
 		});
 

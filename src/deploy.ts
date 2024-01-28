@@ -32,8 +32,8 @@ const getFilesInDirectory = (dir: string) => {
 
 // Slash Commands
 let commands: any = [];
-const commandFiles = getFilesInDirectory("./dist/commands").filter((file) =>
-	file.endsWith(".js")
+const commandFiles = getFilesInDirectory("./dist/commands/discord").filter(
+	(file) => file.endsWith(".js")
 );
 
 for (const file of commandFiles) {
@@ -51,6 +51,9 @@ setTimeout(() => {
 	rest.put(Routes.applicationCommands(process.env.CLIENT_ID as string), {
 		body: commands,
 	})
-		.then(console.log)
+		.then((p) => {
+			console.log(p);
+			process.exit(0);
+		})
 		.catch(console.error);
 }, 3000);

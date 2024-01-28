@@ -1,40 +1,33 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
-import * as database from "../v4-database/prisma.js";
-import { Discord } from "../v4-database/staff_actions.js";
+import * as database from "../../v4-database/prisma.js";
+import { Discord } from "../../v4-database/staff_actions.js";
 
 export default {
 	data: {
 		meta: new SlashCommandBuilder()
-			.setName("deny")
-			.setDescription("Deny entity (Staff)")
+			.setName("claim")
+			.setDescription("Claim entity (Staff)")
 			.addStringOption((option) =>
 				option
 					.setName("bot")
-					.setDescription("What bot are you wanting to deny?")
+					.setDescription("What bot are you wanting to claim?")
 					.setAutocomplete(true)
 					.setRequired(true)
-			)
-			.addStringOption((option) =>
-				option
-					.setName("reason")
-					.setDescription("Why are you denying this bot?")
-					.setRequired(true)
 			),
-		permissionRequired: "bots.deny",
+		permissionRequired: "bots.claim",
 	},
 	async execute(client, interaction) {
 		const bot = interaction.options.getString("bot");
-		const reason = interaction.options.getString("reason");
 		const data = await database.Discord.get({
 			botid: bot,
 		});
 
 		if (data) {
-			let action = await Discord.Deny(bot, interaction.user.id, reason);
+			let action = await Discord.Claim(bot, interaction.user.id);
 
 			if (action === true)
 				await interaction.reply({
-					content: "Bot denied!",
+					content: "Bot claimed!",
 				});
 		}
 	},
@@ -47,7 +40,7 @@ export default {
 		}[] = [];
 
 		const bots = await database.Discord.find({
-			state: "CLAIMED",
+			state: "PENDING",
 		});
 		bots.map((o) =>
 			choices.push({

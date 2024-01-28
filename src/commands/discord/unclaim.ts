@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
-import * as database from "../v4-database/prisma.js";
-import { Discord } from "../v4-database/staff_actions.js";
+import * as database from "../../v4-database/prisma.js";
+import { Discord } from "../../v4-database/staff_actions.js";
 
 export default {
 	data: {

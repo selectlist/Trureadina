@@ -1,26 +1,26 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
-import * as database from "../v4-database/prisma.js";
-import { Discord } from "../v4-database/staff_actions.js";
+import * as database from "../../v4-database/prisma.js";
+import { Discord } from "../../v4-database/staff_actions.js";
 
 export default {
 	data: {
 		meta: new SlashCommandBuilder()
-			.setName("approve")
-			.setDescription("Approve entity (Staff)")
+			.setName("deny")
+			.setDescription("Deny entity (Staff)")
 			.addStringOption((option) =>
 				option
 					.setName("bot")
-					.setDescription("What bot are you wanting to approve?")
+					.setDescription("What bot are you wanting to deny?")
 					.setAutocomplete(true)
 					.setRequired(true)
 			)
 			.addStringOption((option) =>
 				option
 					.setName("reason")
-					.setDescription("Why are you approving this bot?")
+					.setDescription("Why are you denying this bot?")
 					.setRequired(true)
 			),
-		permissionRequired: "bots.approve",
+		permissionRequired: "bots.deny",
 	},
 	async execute(client, interaction) {
 		const bot = interaction.options.getString("bot");
@@ -30,15 +30,11 @@ export default {
 		});
 
 		if (data) {
-			let action = await Discord.Approve(
-				bot,
-				interaction.user.id,
-				reason
-			);
+			let action = await Discord.Deny(bot, interaction.user.id, reason);
 
 			if (action === true)
 				await interaction.reply({
-					content: "Bot approved!",
+					content: "Bot denied!",
 				});
 		}
 	},

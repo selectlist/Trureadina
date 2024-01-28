@@ -67,8 +67,8 @@ const commands: Map<
 		) => Promise<void>;
 	}
 > = new Map();
-const commandFiles = getFilesInDirectory("./dist/commands").filter((file) =>
-	file.endsWith(".js")
+const commandFiles = getFilesInDirectory("./dist/commands/discord").filter(
+	(file) => file.endsWith(".js")
 );
 
 for (const file of commandFiles) {

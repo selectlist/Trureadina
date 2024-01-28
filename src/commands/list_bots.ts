@@ -7,11 +7,11 @@ export default {
 	data: {
 		meta: new SlashCommandBuilder()
 			.setName("list_bots")
-			.setDescription("List all Bots."),
+			.setDescription("List all Discord Bots."),
 		permissionRequired: null,
 	},
 	async execute(client, interaction) {
-		const bots = await database.Bots.find({
+		const bots = await database.Discord.find({
 			state: "APPROVED",
 		});
 

@@ -16,6 +16,7 @@ import {
 	AutocompleteInteraction,
 } from "discord.js";
 import { debug, info, error } from "./logger.js";
+import "./revolt.js";
 import "dotenv/config";
 
 // Config

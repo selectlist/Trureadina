@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import * as database from "../../v4-database/prisma.js";
-import { Discord } from "../../v4-database/staff_actions.js";
+import { Query } from "../../v4-database/rpc.js";
 
 export default {
 	data: {
@@ -23,8 +23,12 @@ export default {
 		});
 
 		if (data) {
-			let action = await Discord.Claim(bot, interaction.user.id);
-
+			let action = await Query("bots.claim", {
+				bot_id: data.botid,
+				staff_id: interaction.user.id,
+				platform: "Discord",
+			});
+			console.log(action);
 			if (action === true)
 				await interaction.reply({
 					content: "Bot claimed!",

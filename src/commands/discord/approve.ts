@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import * as database from "../../v4-database/prisma.js";
-import { Discord } from "../../v4-database/staff_actions.js";
+import { Query } from "../../v4-database/rpc.js";
 
 export default {
 	data: {
@@ -30,11 +30,12 @@ export default {
 		});
 
 		if (data) {
-			let action = await Discord.Approve(
-				bot,
-				interaction.user.id,
-				reason
-			);
+			let action = await Query("bots.approve", {
+				bot_id: data.botid,
+				staff_id: interaction.user.id,
+				platform: "Discord",
+				reason: reason,
+			});
 
 			if (action === true)
 				await interaction.reply({

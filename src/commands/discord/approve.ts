@@ -1,33 +1,45 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
-import * as database from "../v4-database/prisma.js";
-import { Discord } from "../v4-database/staff_actions.js";
+import * as database from "../../v4-database/prisma.js";
+import { Query } from "../../v4-database/rpc.js";
 
 export default {
 	data: {
 		meta: new SlashCommandBuilder()
-			.setName("claim")
-			.setDescription("Claim entity (Staff)")
+			.setName("approve")
+			.setDescription("Approve entity (Staff)")
 			.addStringOption((option) =>
 				option
 					.setName("bot")
-					.setDescription("What bot are you wanting to claim?")
+					.setDescription("What bot are you wanting to approve?")
 					.setAutocomplete(true)
 					.setRequired(true)
+			)
+			.addStringOption((option) =>
+				option
+					.setName("reason")
+					.setDescription("Why are you approving this bot?")
+					.setRequired(true)
 			),
-		permissionRequired: "bots.claim",
+		permissionRequired: "bots.approve",
 	},
 	async execute(client, interaction) {
 		const bot = interaction.options.getString("bot");
+		const reason = interaction.options.getString("reason");
 		const data = await database.Discord.get({
 			botid: bot,
 		});
 
 		if (data) {
-			let action = await Discord.Claim(bot, interaction.user.id);
+			let action = await Query("bots.approve", {
+				bot_id: data.botid,
+				staff_id: interaction.user.id,
+				platform: "Discord",
+				reason: reason,
+			});
 
 			if (action === true)
 				await interaction.reply({
-					content: "Bot claimed!",
+					content: "Bot approved!",
 				});
 		}
 	},
@@ -40,7 +52,7 @@ export default {
 		}[] = [];
 
 		const bots = await database.Discord.find({
-			state: "PENDING",
+			state: "CLAIMED",
 		});
 		bots.map((o) =>
 			choices.push({

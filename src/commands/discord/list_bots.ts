@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { EmbedBuilder } from "discord.js";
-import Pagination from "../pagination.js";
-import * as database from "../v4-database/prisma.js";
+import Pagination from "../../pagination.js";
+import * as database from "../../v4-database/prisma.js";
 
 export default {
 	data: {

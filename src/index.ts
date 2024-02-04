@@ -1,7 +1,7 @@
 // Packages
 import fs from "fs";
 import path from "path";
-import * as database from "./v4-database/prisma.js";
+import * as database from "./Serendipity/prisma.js";
 import { hasPerm } from "./perms.js";
 import {
 	Client,

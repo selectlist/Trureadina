@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
-import * as database from "../../v4-database/prisma.js";
-import { Query } from "../../v4-database/rpc.js";
+import * as database from "../../Serendipity/prisma.js";
+import { Query } from "../../Serendipity/rpc.js";
 
 export default {
 	data: {

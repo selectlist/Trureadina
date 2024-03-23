@@ -28,7 +28,7 @@ export default {
 				staff_id: interaction.user.id,
 				platform: "Discord",
 			});
-			console.log(action);
+
 			if (action === true)
 				await interaction.reply({
 					content: "Bot claimed!",
